@@ -23,27 +23,27 @@ void readProc(const MIDIPacketList* packetList, void* dev, void* alwaysNil) {
                     0;                                    // none of the above
 
             switch (type) {
-                case 1:
+                case 1:     // note off
                     packetSkip = isFromPt ? ptNote(packet, packetIndex, device) :
                                             sdNote(packet, packetIndex, device);
                     break;
-                case 2:
+                case 2:     // note on
                     packetSkip = isFromPt ? ptNote(packet, packetIndex, device) :
                                             sdNote(packet, packetIndex, device);
                     break;
-                case 3:                     // sd doesn't send aftertouch
+                case 3:     // aftertouch   // sd doesn't send aftertouch
                     packetSkip = isFromPt ? ptAfter(packet, packetIndex, device) :
                                             DEFAULTSKIP; 
                     break;
-                case 4:
+                case 4:     // cc
                     packetSkip = isFromPt ? ptCC(packet, packetIndex, device) :
                                             sdCC(packet, packetIndex, device);
                     break;
-                case 5:                     // pt doesn't send pitchbend
+                case 5:     // pitchbend   // pt doesn't send pitchbend
                     packetSkip = isFromPt ? DEFAULTSKIP :
                                             sdPitchbend(packet, packetIndex, device);
                     break;
-                case 6:                     // sd doesn't send sysex
+                case 6:     // sysex        // sd doesn't send sysex
                     packetSkip = isFromPt ? ptSysex(packet, packetIndex, device) :
                                             DEFAULTSKIP; 
                     break;
