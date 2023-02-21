@@ -8,8 +8,6 @@ Compile it with: 'gcc -o main main.c -framework CoreMIDI -framework CoreServices
 
 Copy it to '/usr/bin/local' and run it from a terminal.
 
-Compiled version will come soon.
-
 Not all of the features of the MIDI plugin from Trevligaspel are working.
 This because Pro Tools talks & listens to EUCON & HUI, the plugin talks & listens to MCU.
 
