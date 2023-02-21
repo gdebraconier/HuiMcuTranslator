@@ -1,6 +1,6 @@
 #include "main.h"
 
-int main(void) {
+int main(int argc, char* argv[]) {
     pthread_t stopThread;
     MIDIClientRef midiClient;
 
