@@ -29,7 +29,7 @@ Some features not working:
 
 For some Mackie features you have to press a modifier. These are implemented;
 
-## Manual:
+## First time:
 
 - Open 'Audio/MIDI-configuration'
 - Open 'MIDI-studio'
@@ -55,7 +55,12 @@ For some Mackie features you have to press a modifier. These are implemented;
 - Voila!
 - When you're finished, press 'Enter' to stop the translator; all faders go down, pans to the center and button lights out
 
-The reason you should not open a session in Pro Tools before starting HuiMcuTranslator is: Pro Tools sends information about a session right after opening that session. Once that information is send, it is lost.
+## Normal use:
+- Start Elgato Streamdeck software
+- Start HuiMcuTranslator
+- Start Pro Tools
+
+The reason you should not open a session in Pro Tools before starting Elgato Streamdeck software/HuiMcuTranslator is: Pro Tools sends information about a session right after opening that session. Once that information is send, it is lost.
 
 This is my first attempt to write a program in C, so please be kind... :)
 
