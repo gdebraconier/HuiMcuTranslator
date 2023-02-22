@@ -9,7 +9,7 @@ Runs only on Mac (Intel & M1), as far as I can tell (I have no Windows PC yet, w
 Download 'main.c' and compile with: 'gcc -o HuiMcuTranslator main.c -framework CoreMIDI -framework CoreServices -O3'.
 
 ## Build
-Or use one of the pre-build versions in 'Builds' (Intel & Apple M1).
+Or use one of the pre-build versions in 'Builds' (Intel & Apple M1). No Windows or Linux version.
 
 ## Installation
 Copy the compiled or pre-build versio to '/usr/bin/local'.
