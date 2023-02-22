@@ -57,7 +57,6 @@ struct Device {
     struct Flags*   flags;
 };
 
-
 void createInputPortSource (MIDIClientRef  client,
                             CFStringRef    portName,
                             MIDIReadProc   readProc,
