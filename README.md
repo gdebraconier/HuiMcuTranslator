@@ -53,7 +53,7 @@ For some Mackie features you have to press a modifier. These are implemented;
 - Open a Terminal window; type HuiMcuTranslator and press <Enter>
 - Open Pro Tools and open a session
 - Voila!
-- When you're finished, press <Enter> to stop the translator; all faders go down, pans to the center and button lights out
+- When you're finished, press 'Enter' to stop the translator; all faders go down, pans to the center and button lights out
 
 The reason you should not open a session in Pro Tools before starting HuiMcuTranslator is: Pro Tools sends information about a session right after opening that session. Once that information is send, it is lost.
 
