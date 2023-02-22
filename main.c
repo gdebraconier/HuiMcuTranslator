@@ -25,6 +25,18 @@
 #define HUITIMEC    17
 #define HUILCD      18
 
+struct Show {
+    int trackNames;
+    int lcdDisplay;
+    int timeCode;
+};
+
+struct Flags {
+    int click;
+    int scrub;
+    int flash;
+};
+
 struct Device {
     char*           deviceName;
     char*           packetTitle;
@@ -40,8 +52,11 @@ struct Device {
     int             clickFlag;
     int             scrubFlag;
     int             flashFlag;
+    struct Show*    show;
     struct Device*  target;
+    struct Flags*   flags;
 };
+
 
 void createInputPortSource (MIDIClientRef  client,
                             CFStringRef    portName,
@@ -113,29 +128,34 @@ int main(int argc, char* argv[]) {
     pthread_t stopThread;
     MIDIClientRef midiClient;
 
+    struct Show   sh;
+    struct Flags  fl;
     struct Device pt;
+    struct Device sd;
+    
+    sh.trackNames     = 1;
+    sh.lcdDisplay     = 0;
+    sh.timeCode       = 0;
+
+    fl.click          = 0;
+    fl.scrub          = 0;
+    fl.flash          = 0;
+
     pt.deviceName     = "pt";
     pt.packetTitle    = "pt out: ";
     pt.outEndpName    = "PT OUT";
     pt.inEndpName     = "PT IN";
-    pt.showTrackNames = 1;
-    pt.showLcdDisplay = 0;
-    pt.showTimecode   = 0;
-    pt.clickFlag      = 0;
-    pt.scrubFlag      = 0;
-    pt.flashFlag      = 0;
+    pt.show           = &sh;
+    pt.target         = &sd;
+    pt.flags          = &fl;
 
-    struct Device sd;
     sd.deviceName     = "sd";
     sd.packetTitle    = "sd out: ";
     sd.outEndpName    = "SD OUT";
     sd.inEndpName     = "SD IN";
-    sd.clickFlag      = 0;
-    sd.scrubFlag      = 0;
-    sd.flashFlag      = 0;
-
-    pt.target = &sd;
-    sd.target = &pt;
+    sd.show           = &sh;
+    sd.target         = &pt;
+    sd.flags          = &fl;
 
     MIDIClientCreate(CFSTR("client"), NULL, NULL, &midiClient);
 
@@ -153,6 +173,12 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+/*
+*
+*
+*   END OF MAIN
+*
+*/
 
 void readProc(const MIDIPacketList* packetList, void* dev, void* alwaysNil) {
 
@@ -169,28 +195,34 @@ void readProc(const MIDIPacketList* packetList, void* dev, void* alwaysNil) {
         while (packetIndex < packetLength) {
             switch (packet->data[packetIndex]) {
                 case NOTEOFF:
-                    packetSkip = isFromPt ? ptNote(packet, packetIndex, device) :
-                                            sdNote(packet, packetIndex, device);
+                    packetSkip = isFromPt ?
+                                 ptNote(packet, packetIndex, device) :
+                                 sdNote(packet, packetIndex, device);
                     break;
                 case NOTEON:
-                    packetSkip = isFromPt ? ptNote(packet, packetIndex, device) :
-                                            sdNote(packet, packetIndex, device);
+                    packetSkip = isFromPt ?
+                                 ptNote(packet, packetIndex, device) :
+                                 sdNote(packet, packetIndex, device);
                     break;
                 case AFTERTOUCH:            
-                    packetSkip = isFromPt ? ptAfter(packet, packetIndex, device) :
-                                            DEFAULTSKIP;    // sd doesn't send aftertouch
+                    packetSkip = isFromPt ?
+                                 ptAfter(packet, packetIndex, device) :
+                                 DEFAULTSKIP;    // sd doesn't send aftertouch
                     break;
                 case CC:
-                    packetSkip = isFromPt ? ptCC(packet, packetIndex, device) :
-                                            sdCC(packet, packetIndex, device);
+                    packetSkip = isFromPt ?
+                                 ptCC(packet, packetIndex, device) :
+                                 sdCC(packet, packetIndex, device);
                     break;
                 case PITCHBEND:             
-                    packetSkip = isFromPt ? DEFAULTSKIP :   // pt doesn't send pitchbend
-                                            sdPB(packet, packetIndex, device);
+                    packetSkip = isFromPt ?
+                                 DEFAULTSKIP :   // pt doesn't send pitchbend
+                                 sdPB(packet, packetIndex, device);
                     break;
                 case SYSEX:                 
-                    packetSkip = isFromPt ? ptSysex(packet, packetIndex, device) :
-                                            DEFAULTSKIP;    // sd doesn't send sysex
+                    packetSkip = isFromPt ?
+                                 ptSysex(packet, packetIndex, device) :
+                                 DEFAULTSKIP;    // sd doesn't send sysex
                     break;
                 default:
                     packetSkip = DEFAULTSKIP;
@@ -360,8 +392,8 @@ int arrcmp(Byte* arr1, Byte* arr2, Byte len) {
 }
 
 void flashButton(Byte note, struct Device* device) {
-    Byte type = device->flashFlag == 1 ? 144 : 128;
-    Byte velocity = device->flashFlag == 1 ? 127 : 0;
+    Byte type       = device->flags->flash == 1 ? 144 : 128;
+    Byte velocity   = device->flags->flash == 1 ? 127 : 0;
     Byte message[3] = {type, note, velocity};
 
     sendMidi(message, 3, device->target->outPort, device->target->destEndp);
@@ -386,16 +418,16 @@ void* runLoopStop(void* arg) {
 }
 
 void sendMcuClick(struct Device* device) {
-    Byte clickMessage[3] = {device->clickFlag == 1 ? 144 : 128,
+    Byte clickMessage[3] = {device->flags->click == 1 ? 144 : 128,
                             89,
-                            device->clickFlag == 1 ? 127 : 64};
+                            device->flags->click == 1 ? 127 : 64};
     sendMidi(clickMessage, 3, device->target->outPort, device->target->destEndp);
-    sendHuiSwitch(21, 0, device->clickFlag, device);
-    device->clickFlag = -device->clickFlag + 1;
+    sendHuiSwitch(21, 0, device->flags->click, device);
+    device->flags->click = (-1 * device->flags->click) + 1;
 }
 
 void sendHuiSwitch(Byte zone, Byte port, Byte flag, struct Device* device) {
-    Byte message[6] = {176, 15, zone, 176, 47, flag==1?port+64:port};
+    Byte message[6] = {176, 15, zone, 176, 47, flag==1 ? port + 64 : port};
     sendMidi(message, 6, device->target->outPort, device->target->destEndp);
 }
 
@@ -451,7 +483,7 @@ void showMcuTrackNames(const MIDIPacket* packet,
     Byte huiTrackNameArr[7]  = {240, 0, 0, 102, 5, 0, 16};
     Byte mcuTrackNameArr[12] = {240, 0, 0, 102, 20, 18, 0, 0, 0, 0, 0, 247};
 
-    if (device->showTrackNames == 1 && (arrcmp(huiTrackNameArr, sysexArr, 7) == 0)) {
+    if (device->show->trackNames == 1 && (arrcmp(huiTrackNameArr, sysexArr, 7) == 0)) {
         mcuTrackNameArr[6] = packet->data[packetIndex+7] * 7;
         for (int n=7;n<11;n++) {
             mcuTrackNameArr[n] = packet->data[packetIndex+n+1];
@@ -467,7 +499,7 @@ void showMcuTimecode(const MIDIPacket* packet,
     Byte huiTimecodeArr[7]   = {240, 0, 0, 102, 5, 0, 17};
     Byte mcuTimecodeArr[3]   = {176, 0, 0};
 
-    if (device->showTimecode == 1 && (arrcmp(huiTimecodeArr, sysexArr, 7) == 0)) {
+    if (device->show->timeCode&& (arrcmp(huiTimecodeArr, sysexArr, 7) == 0)) {
         int packetLength = packet->length;
         for (int n=0;n<packetLength-8;n++) {
             mcuTimecodeArr[1] = n + 64;
@@ -490,7 +522,7 @@ void showMcuLcd(const MIDIPacket* packet,
     Byte huiDisplayArr[7]    = {240, 0, 0, 102, 5, 0, 18};
     Byte mcuDisplayArr[18]   = {240, 0, 0, 102, 20, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 247};
     
-    if (device->showLcdDisplay == 1 && (arrcmp(huiDisplayArr, sysexArr, 7) == 0)) {
+    if (device->show->lcdDisplay == 1 && (arrcmp(huiDisplayArr, sysexArr, 7) == 0)) {
         mcuDisplayArr[6] = packet->data[packetIndex+7] * 10;
         for (int n=7;n<17;n++) {
             mcuDisplayArr[n] = packet->data[packetIndex+n+1];
@@ -529,7 +561,7 @@ int sdNote(const MIDIPacket* packet, int packetIndex, struct Device* device) {
             sendMcuClick(device);
             break;
         case SCRUBTOGGLE: 
-            switch (device->scrubFlag) {
+            switch (device->flags->scrub) {
                 case SCRUBOFF:
                     sendHuiSwitch(13, 5, 1, device);
                     break;
@@ -542,13 +574,14 @@ int sdNote(const MIDIPacket* packet, int packetIndex, struct Device* device) {
                 default:
                     break;
             }
-            device->scrubFlag = device->scrubFlag != SHUTTLE ? device->scrubFlag + 1 : SCRUBOFF;
-            device->target->scrubFlag = device->scrubFlag;
+            device->flags->scrub = device->flags->scrub != SHUTTLE ? device->flags->scrub + 1 : SCRUBOFF;
+//            device->target->scrubFlag = device->flags->scrub;
             break;
         case MCUOTHER:      
             sendHuiSwitch(mcuTable[value][0],
                           mcuTable[value][1],
-                          velocity == 127 ? 1 : 0, device);
+                          velocity == 127 ? 1 : 0,
+                          device);
             break;
         default:
             break;
@@ -605,10 +638,10 @@ int ptNote(const  MIDIPacket* packet, int packetIndex, struct Device* device) {
         Byte message[3] = {144, 0, 127};
         sendMidi(message, 3, device->outPort, device->destEndp);
 
-        if (device->scrubFlag == SHUTTLE) {
+        if (device->flags->scrub == SHUTTLE) {
             checkFlash(packet, packetIndex, device);
-            device->flashFlag = (device->flashFlag == 0) ? 1 : 0;
-            device->target->flashFlag = device->flashFlag;
+            device->flags->flash = (device->flags->flash == 0) ? 1 : 0;
+//            device->target->flashFlag = device->flags->flash;
         }
     }
 
