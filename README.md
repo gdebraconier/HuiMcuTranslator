@@ -29,6 +29,8 @@ Some features not working:
 
 For some Mackie features you have to press a modifier. These are implemented;
 
+See https://github.com/gdebraconier/HuiMcuTranslator/blob/main/Features.txt
+
 ## First time:
 
 - Open 'Audio/MIDI-configuration'
