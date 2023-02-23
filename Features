@@ -1,7 +1,7 @@
 Daw Functions:
     Automation:		Group		no
 			Latch		yes
-			Read		yes
+			Read/Off	yes
 			Touch		yes
 			Trim		no
 			Write		yes
