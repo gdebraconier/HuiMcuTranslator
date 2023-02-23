@@ -37,7 +37,7 @@ See https://github.com/gdebraconier/HuiMcuTranslator/blob/main/Features.txt
 - Open 'MIDI-studio'
 - Double click on 'IAC'
 - Add 4 ports and name them: 'PT IN', 'PT OUT', 'SD IN' and 'SD OUT'
-- It really doesn't matter what name you use, as long as 'PT IN', 'PT OUT' etc are in the name; so 'MY PT IN' or 'Happy SD OUT' are all fine
+  It really doesn't matter what name you use, as long as 'PT IN', 'PT OUT' etc are in the name; so 'MY PT IN' or 'Happy SD OUT' are all fine
 - Close 'Audio/MIDI-configuration'
 - Open Pro Tools
 - Go to 'Setup->Peripharels->MIDI Controllers'
