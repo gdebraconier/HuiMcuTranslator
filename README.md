@@ -53,7 +53,7 @@ See https://github.com/gdebraconier/HuiMcuTranslator/blob/main/Features.txt
 - Choose a button type (Section, Function etc)
 - Read the above message in the Elgato Streamdeck software: 'Please note that...'
 - Add more buttons...
-- Open a Terminal window; type HuiMcuTranslator and press <Enter>
+- Open a Terminal window; type HuiMcuTranslator and press 'Enter'
 - Open Pro Tools and open a session
 - Voila!
 - When you're finished, press 'Enter' to stop the translator; all faders go down, pans to the center and button lights out
