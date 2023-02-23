@@ -1,0 +1,72 @@
+Daw Functions:
+    Automation:		Group		no
+			Latch		yes
+			Read		yes
+			Touch		yes
+			Trim		no
+			Write		yes
+    Display:		Name/Value	not yet
+			SMTPE/Beats	not yet
+    Fader Banks:	Bank Left	yes
+			Bank Right	yes
+			Channel Left	yes
+			Channel right	yes
+			Flip		no
+    Global View	:			no
+    Function select:	F1		yes (toggles edit mode)
+			F2		not yet
+			F3		not yet
+			F4		not yet
+			F5		yes (toggles edit tool)
+			F6		not yet
+			F7		not yet
+			F8		yes (Escape)
+    Markers & Control:	Click		yes (metronome)
+			Cycle		yes
+			Drop		yes (add marker)
+			Marker		yes (add marker)
+			Nudge		no
+			Replace		no
+			Solo		no
+    Modifiers:		Cmd		yes
+			Control		yes
+			Option		yes
+			Shift		yes
+    Utilities:		Cancel		no
+			Enter		yes (Num Enter)
+			Save		yes (press twice)
+			Undo		yes
+    V-Pot Assign:	EQ		not yet
+			Instrument	not yet
+			Plugin		not yet
+			Send		not yet
+			Track		not yet
+Transport:		Cursor Down	yes
+			Cursor Left	yes
+			Cursor Right	yes
+			Cursor Up	yes
+			Fast Forward	yes
+			Play		yes
+			Record		yes
+			Rewind		yes
+			Scrub Button	yes
+			Scrub Wheel	yes
+			Stop		yes
+			Zoom		yes
+Time Display:		Frames/Ticks	not yet
+			Hours/Minutes	not yet
+			Hours/Bars	not yet
+			Minutes/Beats	not yet
+			Seconds/Div	not yet
+Assign Display:		All		not yet
+Channel 1-8:		Fader		yes
+			Mute		yes
+			Arm		yes (Rec)
+			Scribble Strip	yes
+			Select		yes
+			Solo		yes
+			V-Pot		yes
+			V-Pot Select	partial
+Selected Channel:	Select next ch.	not yet
+			Select prev ch.	not yet
+Master Channel:		Fader		no
