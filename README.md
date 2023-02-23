@@ -12,7 +12,7 @@ Download 'main.c' and compile with: 'gcc -o HuiMcuTranslator main.c -framework C
 Or use one of the pre-build versions in 'Builds' (Intel & Apple M1). No Windows or Linux version.
 
 ## Installation
-Copy the compiled or pre-build version to '/usr/bin/local'.
+Copy the compiled or pre-build version on your Mac to '/usr/bin/local'.
 
 ## Features
 Not all of the features of the MIDI plugin from Trevligaspel are working.
