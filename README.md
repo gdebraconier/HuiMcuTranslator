@@ -65,6 +65,14 @@ See https://github.com/gdebraconier/HuiMcuTranslator/blob/main/Features
 
 The reason you should not open a session in Pro Tools before starting Elgato Streamdeck software/HuiMcuTranslator is: Pro Tools sends information about a session right after opening that session. Once that information is send, it is lost.
 
+## Examples
+
+Here: https://github.com/gdebraconier/HuiMcuTranslator/tree/main/Profiles are some examples.
+
+You can use them as a starting point.
+
+## Disclaimer
+
 This is my first attempt to write a program in C, so please be kind... :)
 
 Enjoy!
