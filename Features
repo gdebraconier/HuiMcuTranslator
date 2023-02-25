@@ -38,9 +38,10 @@ Daw Functions:
 			Undo		yes
     V-Pot Assign:	EQ		not yet
 			Instrument	not yet
+			Pan		yes
 			Plugin		not yet
-			Send		not yet
-			Track		not yet
+			Send		yes
+			Track		yes (assigned to flip)
 Transport:		Cursor Down	yes
 			Cursor Left	yes
 			Cursor Right	yes
@@ -70,4 +71,7 @@ Channel 1-8:		Fader		yes
 Selected Channel:	Select next ch.	not yet
 			Select prev ch.	not yet
 Master Channel:		Fader		no
+
+NEW:
+Chammel 1 - 8		Auto		yes (midi note 120 - 127)
 
