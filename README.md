@@ -17,7 +17,7 @@ Double click to run.
 
 ## Features
 Not all of the features of the MIDI plugin from Trevligaspel are working.
-This because Pro Tools talks & listens to EUCON & HUI, the plugin talks & listens to MCU and for some HUI functions there is no MCU available.
+This because Pro Tools talks & listens to EUCON & HUI, the plugin talks & listens to MCU and for some MCU functions there is no HUI available.
 
 Some features not working:
 
@@ -38,7 +38,6 @@ See https://github.com/gdebraconier/HuiMcuTranslator/blob/main/Features
 - Open 'MIDI-studio'
 - Double click on 'IAC'
 - Add 4 ports and name them: 'PT IN', 'PT OUT', 'SD IN' and 'SD OUT'. Now you have added 4 so called 'virtual ports'.
-
   It really doesn't matter which name you use, as long as 'PT IN', 'PT OUT' etc are in the name; so 'MY PT IN' or 'Happy SD OUT' are all fine.
 - (You also can create network sessions with those names. In that case, rename or remove the IAC ports. Or use 2 local (IAC) ports for Pro Tools and 2 remote (Network) ports to connect to another Mac, where the Streamdeck is connected to. In that case, create 2 local (IAC) ports on the other Mac. This is how I have it set up and it works).
 - Close 'Audio/MIDI-Setup'
