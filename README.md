@@ -27,7 +27,7 @@ Some features not working:
 - many more...
 - But a lot of things do work! :)
 
-For some Mackie features you have to press a modifier. These are implemented;
+For some Mackie features you have to press and hold a modifier. These are implemented;
 
 See https://github.com/gdebraconier/HuiMcuTranslator/blob/main/Features
 
