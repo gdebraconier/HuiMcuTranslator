@@ -1,7 +1,7 @@
 # HuiMcuTranslator
 
 ## What is it?
-A little command-line program (around 40KB) that 'sits' between Pro Tools and the MIDI plugin from Trevliga Spel for the Elgato Streamdeck (Mackie Control).
+A little command-line program that 'sits' between Pro Tools and the MIDI plugin from Trevliga Spel for the Elgato Streamdeck (Mackie Control).
 
 Runs only on Mac (Intel & M1), as far as I can tell (I have no Windows PC yet, will try that later).
 
