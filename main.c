@@ -60,19 +60,24 @@ void createOutputPortsDests(MIDIClientRef client,
 int ptNote(const MIDIPacket *packet, int packetIndex, struct Device *device);
 int ptAfter(const MIDIPacket *packet, int packetIndex, struct Device *device);
 int ptCC(const MIDIPacket *packet, int packetIndex, struct Device *device);
-// int ptPitchbend(const MIDIPacket* packet, int packetIndex, struct Device* device); pt doesn't send pitchbend
+// int ptPitchbend(const MIDIPacket* packet, int packetIndex, struct Device* device);
+// pt doesn't send pitchbend
 int ptSysex(const MIDIPacket *packet, int packetIndex, struct Device *device);
 int sdNote(const MIDIPacket *packet, int packetIndex, struct Device *device);
-// int sdAftertouch(const MIDIPacket* packet, int packetIndex, struct Device* device); sd doesn't send aftertouch
+// int sdAftertouch(const MIDIPacket* packet, int packetIndex, struct Device* device);
+// sd plugin doesn't send aftertouch
 int sdCC(const MIDIPacket *packet, int packetIndex, struct Device *device);
 int sdPB(const MIDIPacket *packet, int packetIndex, struct Device *device);
-// int sdSysex(const MIDIPacket* packet, int packetIndex, struct Device* device); sd doesn't send sysex
+// int sdSysex(const MIDIPacket* packet, int packetIndex, struct Device* device);
+// sd plugin doesn't send sysex
 void showData(const MIDIPacket *packet, char *deviceName);
 void readProc(const MIDIPacketList *packetList, void *dev, void *alwaysNil);
 char *getObjName(MIDIEndpointRef endp);
 void sendMidi(Byte message[], int len, MIDIPortRef port, MIDIEndpointRef dest);
 MIDIEndpointRef getSource(char *str);
-MIDIEndpointRef getEndpoint(ItemCount (*func1)(), MIDIEndpointRef (*func2)(ItemCount i), char *str);
+MIDIEndpointRef getEndpoint(ItemCount (*func1)(),
+                            MIDIEndpointRef (*func2)(ItemCount i),
+                            char *str);
 void sendHuiSwitch(Byte zone, Byte port, Byte flag, struct Device *device);
 void sendHuiKnob(Byte zone, Byte port, struct Device *device);
 void cpyarr(Byte *target, const MIDIPacket *packet, int ndx, int count);
@@ -116,8 +121,8 @@ void sendMcuClick(struct Device *device);
  */
 int main(int argc, char *argv[])
 {
-    pthread_t stopThread;
     MIDIClientRef midiClient;
+    pthread_t stopThread;
 
     struct Show sh;
     struct Flags fl;
@@ -192,24 +197,25 @@ void readProc(const MIDIPacketList *packetList, void *dev, void *alwaysNil)
         {
             switch (packet->data[packetIndex])
             {
-                case 128 ... 143:
-                    packetSkip = isFromPt ? ptNote(packet, packetIndex, device) : sdNote(packet, packetIndex, device);
+                case 128 ... 159:           // note on / note off
+                    packetSkip = isFromPt ? ptNote(packet, packetIndex, device) :
+                                            sdNote(packet, packetIndex, device);
                     break;
-                case 144 ... 159:
-                    packetSkip = isFromPt ? ptNote(packet, packetIndex, device) : sdNote(packet, packetIndex, device);
+                case 160 ... 175:           // aftertouch
+                    packetSkip = isFromPt ? ptAfter(packet, packetIndex, device) : 
+                                            3; // sd plugin doesn't send aftertouch
                     break;
-                case 160 ... 175:
-                    packetSkip = isFromPt ? ptAfter(packet, packetIndex, device) : 3; // sd doesn't send aftertouch
+                case 176 ... 191:           // cc
+                    packetSkip = isFromPt ? ptCC(packet, packetIndex, device) : 
+                                            sdCC(packet, packetIndex, device);
                     break;
-                case 176 ... 191:
-                    packetSkip = isFromPt ? ptCC(packet, packetIndex, device) : sdCC(packet, packetIndex, device);
-                    break;
-                case 224 ... 239:
+                case 224 ... 239:           // pitchbend
                     packetSkip = isFromPt ? 3 : // pt doesn't send pitchbend
-                                    sdPB(packet, packetIndex, device);
+                                            sdPB(packet, packetIndex, device);
                     break;
-                case 240:
-                    packetSkip = isFromPt ? ptSysex(packet, packetIndex, device) : 3; // sd doesn't send sysex
+                case 240:                   // sysex
+                    packetSkip = isFromPt ? ptSysex(packet, packetIndex, device) :
+                                            3; // sd plugin doesn't send sysex
                     break;
                 default:
                     packetSkip = 3;
@@ -223,39 +229,75 @@ void readProc(const MIDIPacketList *packetList, void *dev, void *alwaysNil)
 
 /*********************************************************************************************/
 
+MIDIEndpointRef getEndpoint(ItemCount (*func1)(),
+                            MIDIEndpointRef (*func2)(ItemCount i),
+                            char *str)
+{
+    ItemCount count = func1();
+    MIDIEndpointRef src;
+    char *objName;
+
+    for (ItemCount s = 0; s < count; s++)
+    {
+        src = func2(s);
+        objName = getObjName(src);
+
+        if (strstr(objName, str))
+        {
+            break;
+        }
+    }
+
+    return src;
+}
+
+/*********************************************************************************************/
+
+char *getObjName(MIDIEndpointRef endp)
+{
+    CFStringRef str;
+
+    MIDIObjectGetStringProperty(endp, kMIDIPropertyName, &str);
+    CFIndex len = CFStringGetLength(str);
+    CFIndex size = CFStringGetMaximumSizeForEncoding(len, kCFStringEncodingUTF8);
+    char *objName = (char *)malloc(size);
+    CFStringGetCString(str, objName, size, kCFStringEncodingUTF8);
+
+    return objName;
+}
+
+/*********************************************************************************************/
+
 void createInputPortSource(MIDIClientRef client,
                            CFStringRef portName,
                            MIDIReadProc readProc,
                            struct Device *device)
 {
-
     MIDIInputPortCreate(client, portName, readProc, device, &device->inPort);
-
     device->srcEndp = getEndpoint(MIDIGetNumberOfSources,
                                   MIDIGetSource,
                                   device->outEndpName);
-
     MIDIPortConnectSource(device->inPort, device->srcEndp, NULL);
 }
+
+/*********************************************************************************************/
 
 void createOutputPortsDests(MIDIClientRef client,
                             CFStringRef outPort,
                             CFStringRef targetPort,
                             struct Device *device)
 {
-
     MIDIOutputPortCreate(client, outPort, &device->outPort);
-
     device->destEndp = getEndpoint(MIDIGetNumberOfDestinations,
                                    MIDIGetDestination,
                                    device->inEndpName);
-
     MIDIOutputPortCreate(client, targetPort, &device->target->outPort);
-
     device->target->destEndp = getEndpoint(MIDIGetNumberOfDestinations,
                                            MIDIGetDestination,
                                            device->target->inEndpName);
 }
+
+/*********************************************************************************************/
 
 void clearLCDDisplays(struct Device *device)
 {
@@ -269,6 +311,8 @@ void clearLCDDisplays(struct Device *device)
     }
 }
 
+/*********************************************************************************************/
+
 void zeroFaders(struct Device *device)
 {
     Byte message[3] = {0, 0, 0};
@@ -279,6 +323,8 @@ void zeroFaders(struct Device *device)
         sendMidi(message, 3, device->outPort, device->destEndp);
     }
 }
+
+/*********************************************************************************************/
 
 void centerPans(struct Device *device)
 {
@@ -291,6 +337,8 @@ void centerPans(struct Device *device)
     }
 }
 
+/*********************************************************************************************/
+
 void offSwitches(struct Device *device)
 {
     Byte message[3] = {128, 0, 64};
@@ -302,6 +350,8 @@ void offSwitches(struct Device *device)
     }
 }
 
+/*********************************************************************************************/
+
 void cleanSd(struct Device *device)
 {
     clearLCDDisplays(device); 
@@ -309,6 +359,8 @@ void cleanSd(struct Device *device)
     centerPans(device);
     offSwitches(device);
 }
+
+/*********************************************************************************************/
 
 void showData(const MIDIPacket *packet, char *deviceName)
 {
@@ -324,42 +376,7 @@ void showData(const MIDIPacket *packet, char *deviceName)
     printf("\n");
 }
 
-MIDIEndpointRef getEndpoint(ItemCount (*func1)(), MIDIEndpointRef (*func2)(ItemCount i), char *str)
-{
-    ItemCount nSrcs = func1();
-    MIDIEndpointRef src = 999;
-    char *objName;
-
-    for (ItemCount iSrc = 0; iSrc < nSrcs; iSrc++)
-    {
-        src = func2(iSrc);
-        objName = getObjName(src);
-        if (strstr(objName, str))
-        {
-            break;
-        }
-    }
-
-    if (src == 999)
-    {
-        exit(1);
-    }
-
-    return src;
-}
-
-char *getObjName(MIDIEndpointRef endp)
-{
-    CFStringRef str;
-
-    MIDIObjectGetStringProperty(endp, kMIDIPropertyName, &str);
-    CFIndex len = CFStringGetLength(str);
-    CFIndex maxSize = CFStringGetMaximumSizeForEncoding(len, kCFStringEncodingUTF8);
-    char *objName = (char *)malloc(maxSize);
-    CFStringGetCString(str, objName, maxSize, kCFStringEncodingUTF8);
-
-    return objName;
-}
+/*********************************************************************************************/
 
 void sendMidi(Byte message[], int len, MIDIPortRef port, MIDIEndpointRef dest)
 {
@@ -372,6 +389,8 @@ void sendMidi(Byte message[], int len, MIDIPortRef port, MIDIEndpointRef dest)
     MIDISend(port, dest, packetList);
 }
 
+/*********************************************************************************************/
+
 void cpyarr(Byte *target, const MIDIPacket *packet, int ndx, int count)
 {
     for (int n = 0; n < count; n++)
@@ -379,6 +398,8 @@ void cpyarr(Byte *target, const MIDIPacket *packet, int ndx, int count)
         target[n] = packet->data[ndx + n];
     }
 }
+
+/*********************************************************************************************/
 
 int arrcmp(Byte *arr1, Byte *arr2, Byte len)
 {
@@ -396,6 +417,8 @@ int arrcmp(Byte *arr1, Byte *arr2, Byte len)
     return retVal;
 }
 
+/*********************************************************************************************/
+
 void flashButton(Byte note, struct Device *device)
 {
     Byte type = device->flags->flash == 1 ? 144 : 128;
@@ -404,6 +427,8 @@ void flashButton(Byte note, struct Device *device)
     sendMidi(message, 3, device->target->outPort, device->target->destEndp);
 }
 
+/*********************************************************************************************/
+
 void checkFlash(const MIDIPacket *packet, int packetIndex, struct Device *device)
 {
     flashButton(101, device);
@@ -411,10 +436,13 @@ void checkFlash(const MIDIPacket *packet, int packetIndex, struct Device *device
     flashButton(92, device);
 }
 
+/*********************************************************************************************/
+
 void *runLoopStop(void *arg)
 {
     char str[64];
 
+    printf("\n");
     printf("Press <Enter> to stop:\n");
     fgets(str, 64, stdin);
 
@@ -422,6 +450,8 @@ void *runLoopStop(void *arg)
 
     return NULL;
 }
+
+/*********************************************************************************************/
 
 void zeroVpot(struct Device* device)
 {
@@ -441,11 +471,15 @@ void sendHuiSwitch(Byte zone, Byte port, Byte flag, struct Device *device)
     sendMidi(message, 6, device->target->outPort, device->target->destEndp);
 }
 
+/*********************************************************************************************/
+
 void sendHuiKnob(Byte zone, Byte port, struct Device *device)
 {
     Byte message[3] = {176, zone, port};
     sendMidi(message, 3, device->target->outPort, device->target->destEndp);
 }
+
+/*********************************************************************************************/
 
 void sendHuiPan(Byte number, Byte value, struct Device *device)
 {
@@ -454,6 +488,8 @@ void sendHuiPan(Byte number, Byte value, struct Device *device)
     Byte message[3] = {176, zone, port};
     sendMidi(message, 3, device->target->outPort, device->target->destEndp);
 }
+
+/*********************************************************************************************/
 
 void sendHuiJog(Byte value, struct Device *device)
 {
@@ -478,17 +514,23 @@ void sendMcuClick(struct Device *device)
     device->flags->click = (-1 * device->flags->click) + 1;
 }
 
+/*********************************************************************************************/
+
 void sendMcuFader(Byte number1, Byte number2, Byte value1, struct Device *device)
 {
     Byte faderMessage[3] = {number1 + 224, number2, value1};
     sendMidi(faderMessage, 3, device->target->outPort, device->target->destEndp);
 }
 
+/*********************************************************************************************/
+
 void sendMcuPan(Byte number1, Byte value1, struct Device *device)
 {
     Byte panMessage[3] = {176, number1 + 48 - 16, value1 + 16};
     sendMidi(panMessage, 3, device->target->outPort, device->target->destEndp);
 }
+
+/*********************************************************************************************/
 
 int sendMcuOther(Byte value1, Byte value2, const Byte huiTable[][8], struct Device *device)
 {
@@ -525,6 +567,7 @@ void showMcuTrackNames(const MIDIPacket *packet,
     if (device->show->trackNames == 1 && (arrcmp(huiTrackNameArr, sysexArr, 7) == 0))
     {
         mcuTrackNameArr[6] = packet->data[packetIndex + 7] * 7;
+        
         for (int n = 7; n < 11; n++)
         {
             mcuTrackNameArr[n] = packet->data[packetIndex + n + 1];
@@ -532,6 +575,8 @@ void showMcuTrackNames(const MIDIPacket *packet,
         }
     }
 }
+
+/*********************************************************************************************/
 
 void showMcuTimecode(const MIDIPacket *packet,
                      int packetIndex,
@@ -544,22 +589,28 @@ void showMcuTimecode(const MIDIPacket *packet,
     if (device->show->timeCode && (arrcmp(huiTimecodeArr, sysexArr, 7) == 0))
     {
         int packetLength = packet->length;
+
         for (int n = 0; n < packetLength - 8; n++)
         {
             mcuTimecodeArr[1] = n + 64;
             mcuTimecodeArr[2] = packet->data[packetIndex + n + 7];
+
             if (n == 3 || n == 5)
             {
                 mcuTimecodeArr[2] += 112;
             }
+
             if (n == 7)
             {
                 mcuTimecodeArr[2] = n + 112;
             }
+
             sendMidi(mcuTimecodeArr, 3, device->target->outPort, device->target->destEndp);
         }
     }
 }
+
+/*********************************************************************************************/
 
 void showMcuLcd(const MIDIPacket *packet,
                 int packetIndex,
@@ -572,6 +623,7 @@ void showMcuLcd(const MIDIPacket *packet,
     if (device->show->lcdDisplay == 1 && (arrcmp(huiDisplayArr, sysexArr, 7) == 0))
     {
         mcuDisplayArr[6] = packet->data[packetIndex + 7] * 10;
+
         for (int n = 7; n < 17; n++)
         {
             mcuDisplayArr[n] = packet->data[packetIndex + n + 1];
@@ -600,7 +652,7 @@ int sdNote(const MIDIPacket *packet, int packetIndex, struct Device *device)
         {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {  8,   1}, {  8,   5},     //  64 -  71
         {  8,   0}, {  8,   4}, { 24,   2}, { 24,   4}, { 24,   0}, { 24,   5}, { 24,   1}, { 12,   3},     //  72 -  79
         {  8,   7}, {  8,   3}, { 27,   7}, { 20,   0}, { 20,   0}, { 26,   3}, { 15,   3}, { 20,   0},     //  80 -  87
-        { 26,   4}, { 21,   0}, { 26,   5}, { 14,   1}, { 14,   2}, { 14,   3}, { 14,   4}, { 14,   4},     //  88 -  95
+        { 26,   4}, { 21,   0}, { 26,   5}, { 14,   1}, { 14,   2}, { 14,   3}, { 14,   4}, { 14,   5},     //  88 -  95
         { 13,   4}, { 13,   0}, { 13,   1}, { 13,   3}, { 13,   2}, { 13,   5}, { 13,   6}, {255, 255},     //  96 - 103
         {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, {255, 255}, { 12,   4},     // 104 - 111
         { 28,   0}, {255, 255}, {  11,  7}, { 11,   6}, { 11,   5}, { 11,   4}, { 11,   3}, { 11,   2},     // 112 - 119
@@ -609,15 +661,15 @@ int sdNote(const MIDIPacket *packet, int packetIndex, struct Device *device)
     };
     Byte value = packet->data[packetIndex + 1];
     Byte velocity = packet->data[packetIndex + 2];
-    const int type = value == 101 && velocity == 127 ? 2
-                   : value == 54                     ? 3
-                   : value == 58                     ? 4
-                   : mcuTable[value][0] != 255       ? 5
+    const int type = value == 101 && velocity == 127 ? 1
+                   : value == 54                     ? 2
+                   : value == 58                     ? 3
+                   : mcuTable[value][0] != 255       ? 4
                    : 0;
 
     switch (type)
     {
-        case 2:
+        case 1:
             switch (device->flags->scrub)
             {
                 case 0:
@@ -632,15 +684,18 @@ int sdNote(const MIDIPacket *packet, int packetIndex, struct Device *device)
                 default:
                     break;
             }
-            device->flags->scrub = device->flags->scrub != 2 ? device->flags->scrub + 1 : 0;
+
+            device->flags->scrub = device->flags->scrub != 2 ?
+                                   device->flags->scrub + 1  :
+                                   0;
             break;
-        case 3:
+        case 2:
             sendHuiSwitch(8, 2, velocity == 127 ? 1 : 0, device);
             break;
-        case 4:
+        case 3:
             sendHuiSwitch(8, 6, velocity == 127 ? 1 : 0, device);
             break;
-        case 5:
+        case 4:
             switch (value)
             {
                 case 41 ... 44:
@@ -681,6 +736,7 @@ int sdNote(const MIDIPacket *packet, int packetIndex, struct Device *device)
                     default:
                         break;
                 }
+
             }
             else if (device->vpot->pan)
             {
@@ -701,9 +757,13 @@ int sdNote(const MIDIPacket *packet, int packetIndex, struct Device *device)
     return 3;
 }
 
+/*********************************************************************************************/
+
 /* int sdAftertouch(const MIDIPacket* packet, int packetIndex, struct Device* device) {
     sd doesn't send aftertouch
 } */
+
+/*********************************************************************************************/
 
 int sdCC(const MIDIPacket *packet, int packetIndex, struct Device *device)
 {
@@ -727,6 +787,8 @@ int sdCC(const MIDIPacket *packet, int packetIndex, struct Device *device)
     return 3;
 }
 
+/*********************************************************************************************/
+
 int sdPB(const MIDIPacket *packet, int packetIndex, struct Device *device)
 {
     Byte channel = packet->data[packetIndex] - 224;
@@ -738,9 +800,13 @@ int sdPB(const MIDIPacket *packet, int packetIndex, struct Device *device)
                         176, channel + 32, low,
                         176, 15, channel,
                         176, 47, 0};
+                        
     sendMidi(message, 18, device->target->outPort, device->target->destEndp);
+
     return 3;
 }
+
+/*********************************************************************************************/
 
 /* int sdSysex(const MIDIPacket* packet, int packetIndex, struct Device* device) {
     sd doesn't send sysex
@@ -754,7 +820,7 @@ int sdPB(const MIDIPacket *packet, int packetIndex, struct Device *device)
 
 int ptNote(const MIDIPacket *packet, int packetIndex, struct Device *device)    // hui reply
 {
-    if (packet->data[packetIndex + 1] == 0 && packet->data[packetIndex + 2 == 64])
+    if ((packet->data[packetIndex + 1] == 0) && (packet->data[packetIndex + 2] < 127))
     { 
         Byte message[3] = {144, 0, 127};
         sendMidi(message, 3, device->outPort, device->destEndp);
@@ -768,6 +834,8 @@ int ptNote(const MIDIPacket *packet, int packetIndex, struct Device *device)    
 
     return 3;
 }
+
+/*********************************************************************************************/
 
 int ptAfter(const MIDIPacket *packet, int packetIndex, struct Device *device)   // vu meters
 { 
@@ -783,6 +851,8 @@ int ptAfter(const MIDIPacket *packet, int packetIndex, struct Device *device)   
 
     return 3;
 }
+
+/*********************************************************************************************/
 
 int ptCC(const MIDIPacket *packet, int packetIndex, struct Device *device)
 {
@@ -826,10 +896,9 @@ int ptCC(const MIDIPacket *packet, int packetIndex, struct Device *device)
     Byte value2 = packet->length > 3 ? packet->data[packetIndex + 5] : 0;
     int packetSkip = 3;
     int type = (number1 >= 0) && (number1 <= 7) && (number2 == number1 + 32) ? 1 : // fader
-                   (number1 == 12) && (number2 == 44) ? 2
-                                                      : // other switch
-                   (number1 >= 16) && (number1 <= 23) ? 3
-                                                      : 0; // pan
+               (number1 == 12) && (number2 == 44)                            ? 2 : // other switch
+               (number1 >= 16) && (number1 <= 23)                            ? 3 : // pan
+               0; 
 
     switch (type)
     {
@@ -842,14 +911,20 @@ int ptCC(const MIDIPacket *packet, int packetIndex, struct Device *device)
         case 3: // pan
             sendMcuPan(number1, value1, device);
             break;
+        default:
+            break;
     }
 
     return packetSkip;
 }
 
+/*********************************************************************************************/
+
 /* int ptPitchbend(const MIDIPacket* packet, int packetIndex, struct Device* device){
     pt doesn't send pitchbend
 } */
+
+/*********************************************************************************************/
 
 int ptSysex(const MIDIPacket *packet, int packetIndex, struct Device *device)
 {
@@ -869,6 +944,8 @@ int ptSysex(const MIDIPacket *packet, int packetIndex, struct Device *device)
         case 18: // show lcd display
             showMcuLcd(packet, packetIndex, sysexArr, device);
             break;
+        default:
+            break;
     };
 
     while (packet->data[++packetIndex] != 247)  // find end of sysex message
@@ -877,3 +954,5 @@ int ptSysex(const MIDIPacket *packet, int packetIndex, struct Device *device)
 
     return packetIndex;
 }
+
+/*********************************************************************************************/
