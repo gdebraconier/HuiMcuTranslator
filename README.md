@@ -12,7 +12,8 @@ Download 'main.c' and compile with: 'gcc -o HuiMcuTranslator main.c -framework C
 Or use one of the pre-build versions in 'Builds' (Intel & Apple M1). No Windows or Linux version.
 
 ## Installation
-Copy the compiled or pre-build version on your Mac to '/usr/bin/local'.
+Copy the compiled or pre-build version on your Mac to a place where you can find it.
+Double click to run.
 
 ## Features
 Not all of the features of the MIDI plugin from Trevligaspel are working.
@@ -33,13 +34,14 @@ See https://github.com/gdebraconier/HuiMcuTranslator/blob/main/Features
 
 ## First time:
 
-- Open 'Audio/MIDI-configuration'
+- Open 'Audio/MIDI-Setup'
 - Open 'MIDI-studio'
 - Double click on 'IAC'
-- Add 4 ports and name them: 'PT IN', 'PT OUT', 'SD IN' and 'SD OUT'.
+- Add 4 ports and name them: 'PT IN', 'PT OUT', 'SD IN' and 'SD OUT'. Now you have added 4 so called 'virtual ports'.
 
-  It really doesn't matter what name you use, as long as 'PT IN', 'PT OUT' etc are in the name; so 'MY PT IN' or 'Happy SD OUT' are all fine
-- Close 'Audio/MIDI-configuration'
+  It really doesn't matter which name you use, as long as 'PT IN', 'PT OUT' etc are in the name; so 'MY PT IN' or 'Happy SD OUT' are all fine.
+- (You also can create network sessions with those names. In that case, rename or remove the IAC ports. Or use 2 local (IAC) ports for Pro Tools and 2 remote (Network) ports to connect to another Mac, where the Streamdeck is connected to. In that case, create 2 local (IAC) ports on the other Mac. This is how I have it set up and it works).
+- Close 'Audio/MIDI-Setup'
 - Open Pro Tools
 - Go to 'Setup->Peripharels->MIDI Controllers'
 - Add 'Type': 'HUI'
